@@ -11,7 +11,7 @@ command -v gh > /dev/null || { echo "install gh: https://cli.github.com/" >&2; e
 gh auth status > /dev/null 2>&1 || { echo "run: gh auth login" >&2; exit 1; }
 
 echo "==> Listing workflows in $OWNER_REPO"
-WORKFLOWS=$(gh api "repos/$OWNER_REPO/actions/workflows?per_page=100" --jq '.workflows[] | select(.path |endswith("/'"$KEEP"'") | not) | "\(.id) \(.name)"')
+WORKFLOWS=$(gh api "repos/$OWNER_REPO/actions/workflows?per_page=100" --jq '.workflows[] | select(.state == "active" and (.path | endswith("/'"$KEEP"'") | not)) | "\(.id) \(.name)"')
 
 if [ -z "$WORKFLOWS" ]; then
   echo "no workflows to disable"
@@ -20,7 +20,7 @@ fi
 
 while read -r id name; do
   echo "  disable: $name (id=$id)"
-  gh api -X PUT "repos/$OWNER_REPO/actions/workflows/$id/disable" > /dev/null
+  gh api -X PUT "repos/$OWNER_REPO/actions/workflows/$id/disable" > /dev/null || echo "  (already disabled, skip)"
 done <<< "$WORKFLOWS"
 
 echo "==> Done. ubuntu-package.yml remains active."

@@ -33,7 +33,7 @@ jobs:
           OWNER_REPO="$GITHUB_REPOSITORY"
           WORKFLOWS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
             "https://api.github.com/repos/$OWNER_REPO/actions/workflows?per_page=100" \
-            | jq -r --arg keep "$KEEP" '.workflows[] | select(.path | endswith("/" + $keep) | not) | "\(.id)\t\(.name)"')
+            | jq -r --arg keep "$KEEP" '.workflows[] | select(.state == "active" and (.path | endswith("/" + $keep) | not)) | "\(.id)\t\(.name)"')
           if [ -z "$WORKFLOWS" ]; then
             echo "no upstream workflows to disable (already clean)"
             exit 0
@@ -41,7 +41,8 @@ jobs:
           while IFS=$'\t' read -r id name; do
             echo "  disable: $name (id=$id)"
             curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" \
-              "https://api.github.com/repos/$OWNER_REPO/actions/workflows/$id/disable" > /dev/null
+              "https://api.github.com/repos/$OWNER_REPO/actions/workflows/$id/disable" > /dev/null \
+              || echo "  (already disabled or error, continue)"
           done <<< "$WORKFLOWS"
           echo "==> upstream workflows disabled"
 
