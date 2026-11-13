@@ -123,7 +123,11 @@ jobs:
   release:
     runs-on: ubuntu-24.04
     needs: [build]
-    if: github.event_name == 'push' && startsWith(github.ref_name, 'ubuntu-v')
+    if: >-
+      always() && !cancelled()
+      && github.event_name == 'push'
+      && startsWith(github.ref_name, 'ubuntu-v')
+      && needs.build.result == 'success'
     steps:
       - uses: actions/download-artifact@v4
         with:
