@@ -29,7 +29,9 @@ concurrency:
 jobs:
   disable-upstream:
     runs-on: ubuntu-24.04
+    # 允许 push 触发以便首次初始化（bootstrap）—— 只在 workflow 文件本身变更时才触发
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      || (github.event_name == 'push' && contains(github.event.head_commit.message, 'ci: temporarily trigger'))
     steps:
       - name: Disable all upstream workflows (keep ubuntu-package.yml)
         env:
