@@ -11,6 +11,12 @@ on:
   workflow_dispatch:
   push:
     tags: ['ubuntu-v*']
+  # 临时：让 push 到 master 的 setup 类文件改动触发 disable-upstream job（首次初始化）
+  # disable-upstream 成功后可删除此段
+    branches:
+      - master
+    paths:
+      - '.github/workflows/ubuntu-package.yml'
 
 permissions:
   contents: write
