@@ -20,22 +20,18 @@ Fork of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek
 
 ## 安装（Ubuntu 24.04 / 22.04）
 
-### 一键 APT 仓库（推荐，自动更新）
+### GitHub Release 下载（推荐）
+
+到 [Releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases) 页面下载最新的 `deepseek-harness-*-linux-amd64-unsigned.deb`：
 
 ```bash
-curl -fsSL https://<apt-base-url>/install.sh | sudo bash
-sudo apt install deepseek-assistant
-```
-
-需要先在 fork 的 GitHub Pages 上发布 apt 仓库（见下方"CI 自动发布"）。
-
-### 手动 deb
-
-```bash
-wget https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases/latest/download/deepseek-harness-0.2.2-rc.3-linux-amd64-unsigned.deb
 sudo dpkg -i deepseek-harness-*.deb
 sudo apt -f install   # 依赖缺失时自动补齐
 ```
+
+升级 = 下载新 deb + `dpkg -i`。GitHub Actions 每日 UTC 20:00 自动 merge 上游并构建；手动升级可自己打 tag 触发。
+
+### AppImage（免安装）
 
 ### AppImage（免安装）
 
@@ -58,25 +54,11 @@ pnpm install
 ## Fork 初始化（一次性）
 
 1. **启用 Actions**：Settings → Actions → General → Allow all actions
-2. **禁用上游遗留 workflow**：Actions 页面逐个点击上游 workflow（CI、Release、E2E 等 34 个）→ `···` → **Disable workflow**。否则每个 push 都会触发上游 CI 消耗 Actions 分钟数。
-   - 或一键：`./scripts/ci/disable-upstream-workflows.sh`（需 [gh CLI](https://cli.github.com/) 登录）
-3. **配置 GPG 签名**（发布 deb 到 APT 仓库需要）：
+2. **禁用上游遗留 workflow**（重要，否则每个 push 消耗大量 Actions 分钟数）：
    ```bash
-   # 生成签名 key
-   gpg --batch --gen-key <<EOF
-   %no-protection
-   Key-Type: RSA
-   Key-Length: 4096
-   Name-Real: DeepSeek Assistant Ubuntu
-   Name-Email: you@example.com
-   Expire-Date: 0
-   %commit
-   EOF
-   # 导出私钥
-   gpg --armor --export-secret-keys you@example.com > dsh-apt-private.key
+   ./scripts/ci/disable-upstream-workflows.sh   # 需 gh CLI 登录
    ```
-   然后在 Settings → Secrets → Actions → `GPG_PRIVATE_KEY` 粘贴私钥全文。
-4. **启用 GitHub Pages**：Settings → Pages → Source: `Deploy from a branch` → Branch: `apt-pages` / `/ (root)`（首次 publish 后自动出现）
+3. **启用 GitHub Releases**：默认已开启，无需配置
 
 ## CI 自动发布
 
@@ -84,11 +66,12 @@ pnpm install
 
 | 触发 | 动作 |
 |---|---|
-| `push` tag `ubuntu-v*` | build → docker smoke-test → GPG 签名 → 发布 GitHub Pages（APT 仓库）+ GitHub Release |
-| 每天 UTC 04:00 | merge upstream/master，验证构建通过 |
-| `workflow_dispatch` | 手动触发 |
+| 每天 UTC 20:00（北京时间 04:00） | merge upstream/master → 构建 AppImage + deb → artifacts 保留 7 天 |
+| `push` tag `ubuntu-v*` | 构建 → 发布 GitHub Release（deb + AppImage + SHA256SUMS） |
+| `workflow_dispatch` | 手动触发（含 sync） |
 
-Secrets 需配置：`GPG_PRIVATE_KEY`（apt 签名用）。
+无需任何 secret 配置。
+
 
 ## 与上游的差异（全部为打包层）
 

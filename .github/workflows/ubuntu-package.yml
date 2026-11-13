@@ -1,11 +1,13 @@
 name: Ubuntu package
 
-# Build unsigned Linux Desktop artifacts, run smoke tests, and (on tag) publish to APT repo.
-# Scheduled runs sync upstream master daily and verify the build still passes.
+# Fork 定位：个人使用 + 开源展示，不 PR 主线。核心价值 = 快速跟上 upstream。
+# - 每日自动 merge upstream/master 并构建（验证跟得上）
+# - tag 触发时发布到 GitHub Release（deb + AppImage + SHA256SUMS）
+# - 无 APT 仓库 / 无 GPG / 无 Docker smoke（个人用 dpkg -i 升级足够）
 
 on:
   schedule:
-    - cron: '0 4 * * *'   # daily UTC 04:00: sync upstream
+    - cron: '0 20 * * *'   # UTC 20:00 = 北京时间 04:00，赶在上游白天更新后
   workflow_dispatch:
   push:
     tags: ['ubuntu-v*']
@@ -23,30 +25,46 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
-      - run: |
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge upstream/master
+        run: |
+          git config user.name "ubuntu-package-bot"
+          git config user.email "bot@users.noreply.github.com"
           git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git || true
-          git fetch upstream master
+          git fetch upstream master --tags || true
           git merge upstream/master --no-edit || {
-            echo "::error::upstream merge conflict - manual resolution required"
+            echo "::error::merge conflict - resolve locally then push"
+            git diff --name-only --diff-filter=U || true
             exit 1
           }
-      - run: git push origin HEAD
+
+      - name: Push updated master
+        run: git push origin HEAD:master
 
   build:
     runs-on: ubuntu-24.04
     needs: [sync-upstream]
     if: always() && !failure() && !cancelled()
     steps:
+      # 关键：sync push 之后 master 已更新，这里 checkout 最新 master
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
 
       - uses: actions/setup-node@v4
-        with: { node-version: 24.9.0 }
+        with:
+          node-version: 24.9.0
 
       - uses: pnpm/action-setup@v4
-        with: { version: 11.28.5 }
+        with:
+          version: 11.28.5
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build Linux artifacts (x64)
         run: ./scripts/linux/package-ubuntu.sh x64
@@ -66,45 +84,17 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/SHA256SUMS.txt
+          retention-days: 7
 
-  smoke-test:
+  release:
     runs-on: ubuntu-24.04
     needs: [build]
-    steps:
-      - uses: actions/download-artifact@v4
-        with: { name: linux-artifacts, path: dist }
-
-      - name: Install deb in a clean container
-        run: |
-          docker run --rm -v "$PWD/dist:/dist" -v "$PWD/scripts:/scripts:ro" ubuntu:24.04 bash /scripts/ci/smoke-deb.sh
-
-  publish:
-    runs-on: ubuntu-24.04
-    needs: [smoke-test]
     if: startsWith(github.ref, 'refs/tags/ubuntu-v')
-    environment: apt-publish
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
-        with: { name: linux-artifacts, path: dist }
-
-      - name: Import GPG key
-        run: |
-          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
-          echo "GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $5; exit}')" >> "$GITHUB_ENV"
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-
-      - name: Build APT repository
-        run: ./apt-repo/scripts/build-apt-repo.sh
-        env: { GPG_KEY_ID: "${{ env.GPG_KEY_ID }}" }
-
-      - name: Publish to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./apt-repo
-          publish_branch: apt-pages
+          name: linux-artifacts
+          path: dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -114,3 +104,5 @@ jobs:
             dist/*.deb
             dist/SHA256SUMS.txt
           generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, 'rc') || contains(github.ref, 'alpha') }}
