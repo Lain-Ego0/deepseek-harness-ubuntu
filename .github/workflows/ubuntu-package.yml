@@ -14,12 +14,37 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: ubuntu-package-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  disable-upstream:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Disable all upstream workflows (keep ubuntu-package.yml)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          KEEP="ubuntu-package.yml"
+          OWNER_REPO="$GITHUB_REPOSITORY"
+          WORKFLOWS=$(curl -sf -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/$OWNER_REPO/actions/workflows?per_page=100" \
+            | jq -r --arg keep "$KEEP" '.workflows[] | select(.path | endswith("/" + $keep) | not) | "\(.id)\t\(.name)"')
+          if [ -z "$WORKFLOWS" ]; then
+            echo "no upstream workflows to disable (already clean)"
+            exit 0
+          fi
+          while IFS=$'\t' read -r id name; do
+            echo "  disable: $name (id=$id)"
+            curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$OWNER_REPO/actions/workflows/$id/disable" > /dev/null
+          done <<< "$WORKFLOWS"
+          echo "==> upstream workflows disabled"
+
   sync-upstream:
     runs-on: ubuntu-24.04
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
