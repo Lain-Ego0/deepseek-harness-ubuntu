@@ -54,11 +54,8 @@ pnpm install
 ## Fork 初始化（一次性）
 
 1. **启用 Actions**：Settings → Actions → General → Allow all actions
-2. **禁用上游遗留 workflow**（重要，否则每个 push 消耗大量 Actions 分钟数）：
-   ```bash
-   ./scripts/ci/disable-upstream-workflows.sh   # 需 gh CLI 登录
-   ```
-3. **启用 GitHub Releases**：默认已开启，无需配置
+2. **禁用上游 workflow**（自动完成）：`ubuntu-package.yml` 里的 `disable-upstream` job 会在每日 schedule 或手动触发时自动禁用上游的 34 个 workflow，只需等它跑一次即可（首次约 5 分钟）。也可手动用 `./scripts/ci/disable-upstream-workflows.sh`（需 gh CLI）。
+3. **无其他配置**：GitHub Releases 默认开启；每日 UTC 20:00 自动构建。
 
 ## CI 自动发布
 
