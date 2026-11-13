@@ -9,6 +9,7 @@
 Fork of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) · not affiliated with DeepSeek AI
 
 [![CI Ubuntu](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/actions/workflows/ubuntu-package.yml/badge.svg)](./.github/workflows/ubuntu-package.yml)
+[![Latest Release](https://img.shields.io/github/v/release/Lain-Ego0/deepseek-harness-ubuntu?include_prereleases&label=release&sort=semver)](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
 </div>
