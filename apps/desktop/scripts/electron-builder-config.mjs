@@ -256,7 +256,12 @@ export function createElectronBuilderConfig(
     },
     linux: {
       category: 'Development',
-      target: ['AppImage'],
+      target: ['AppImage', 'deb'],
+      maintainer: 'DeepSeek Assistant Linux Community <dsh-linux@example.invalid>',
+      vendor: 'DeepSeek Assistant Linux Community',
+    },
+    deb: {
+      depends: ['libc6', 'libgtk-3-0', 'libnss3', 'libasound2t64', 'libxss1'],
     },
     nsis: {
       uninstallDisplayName: '${productName}',
