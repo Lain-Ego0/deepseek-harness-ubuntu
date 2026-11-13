@@ -55,6 +55,29 @@ pnpm install
 
 产物输出到 `apps/desktop/.desktop-build/targets/linux-*/unsigned-artifacts/`。
 
+## Fork 初始化（一次性）
+
+1. **启用 Actions**：Settings → Actions → General → Allow all actions
+2. **禁用上游遗留 workflow**：Actions 页面逐个点击上游 workflow（CI、Release、E2E 等 34 个）→ `···` → **Disable workflow**。否则每个 push 都会触发上游 CI 消耗 Actions 分钟数。
+   - 或一键：`./scripts/ci/disable-upstream-workflows.sh`（需 [gh CLI](https://cli.github.com/) 登录）
+3. **配置 GPG 签名**（发布 deb 到 APT 仓库需要）：
+   ```bash
+   # 生成签名 key
+   gpg --batch --gen-key <<EOF
+   %no-protection
+   Key-Type: RSA
+   Key-Length: 4096
+   Name-Real: DeepSeek Assistant Ubuntu
+   Name-Email: you@example.com
+   Expire-Date: 0
+   %commit
+   EOF
+   # 导出私钥
+   gpg --armor --export-secret-keys you@example.com > dsh-apt-private.key
+   ```
+   然后在 Settings → Secrets → Actions → `GPG_PRIVATE_KEY` 粘贴私钥全文。
+4. **启用 GitHub Pages**：Settings → Pages → Source: `Deploy from a branch` → Branch: `apt-pages` / `/ (root)`（首次 publish 后自动出现）
+
 ## CI 自动发布
 
 `.github/workflows/ubuntu-package.yml`：
