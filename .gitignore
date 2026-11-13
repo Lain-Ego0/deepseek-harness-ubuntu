@@ -52,3 +52,11 @@ native/system/test/bin/
 
 # Generated company-signed CUA release record.
 /packages/experimental/cua-macos/cua-helper.json
+
+# Linux desktop packaging (this fork)
+/apps/desktop/.desktop-build/
+/apps/desktop/dist/
+/apt-repo/pool/
+/apt-repo/dists/
+/apt-repo/db/
+/apt-repo/conf/

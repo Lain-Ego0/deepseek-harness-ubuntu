@@ -1,0 +1,112 @@
+name: Ubuntu package
+
+# Build unsigned Linux Desktop artifacts, run smoke tests, and (on tag) publish to APT repo.
+# Scheduled runs sync upstream master daily and verify the build still passes.
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # daily UTC 04:00: sync upstream
+  workflow_dispatch:
+  push:
+    tags: ['ubuntu-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: |
+          git remote add upstream https://github.com/deepseek-ai/deepseek-harness.git || true
+          git fetch upstream master
+          git merge upstream/master --no-edit || {
+            echo "::error::upstream merge conflict - manual resolution required"
+            exit 1
+          }
+      - run: git push origin HEAD
+
+  build:
+    runs-on: ubuntu-24.04
+    needs: [sync-upstream]
+    if: always() && !failure() && !cancelled()
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 24.9.0 }
+
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.28.5 }
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build Linux artifacts (x64)
+        run: ./scripts/linux/package-ubuntu.sh x64
+
+      - name: Stage artifacts
+        run: |
+          mkdir -p dist
+          cp apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/*.AppImage dist/
+          cp apps/desktop/.desktop-build/targets/linux-x64/unsigned-artifacts/*.deb dist/
+          (cd dist && sha256sum *.AppImage *.deb > SHA256SUMS.txt)
+          ls -lh dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/SHA256SUMS.txt
+
+  smoke-test:
+    runs-on: ubuntu-24.04
+    needs: [build]
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: linux-artifacts, path: dist }
+
+      - name: Install deb in a clean container
+        run: |
+          docker run --rm -v "$PWD/dist:/dist" -v "$PWD/scripts:/scripts:ro" ubuntu:24.04 bash /scripts/ci/smoke-deb.sh
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: [smoke-test]
+    if: startsWith(github.ref, 'refs/tags/ubuntu-v')
+    environment: apt-publish
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: linux-artifacts, path: dist }
+
+      - name: Import GPG key
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          echo "GPG_KEY_ID=$(gpg --list-secret-keys --with-colons | awk -F: '/^sec/{print $5; exit}')" >> "$GITHUB_ENV"
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+
+      - name: Build APT repository
+        run: ./apt-repo/scripts/build-apt-repo.sh
+        env: { GPG_KEY_ID: "${{ env.GPG_KEY_ID }}" }
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./apt-repo
+          publish_branch: apt-pages
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.AppImage
+            dist/*.deb
+            dist/SHA256SUMS.txt
+          generate_release_notes: true
