@@ -91,6 +91,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Show build context
+        run: |
+          echo "HEAD: $(git rev-parse HEAD)"
+          echo "master: $(git rev-parse origin/master 2>/dev/null || echo 'no origin/master')"
+          git log --oneline -3
+          node --version
+          pnpm --version
+
       - name: Build Linux artifacts (x64)
         run: ./scripts/linux/package-ubuntu.sh x64
 
