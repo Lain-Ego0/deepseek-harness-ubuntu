@@ -49,8 +49,8 @@ echo "==> [6/7] electron-builder (AppImage + deb)"
 cd apps/desktop
 npx electron-builder --linux AppImage deb \
   --config electron-builder.config.mjs \
-  --config.extraMetadata.name=deepseek-assistant \
-  --config.extraMetadata.executableName=deepseek-assistant \
+  --config.extraMetadata.name=deepseek-harness \
+  --config.extraMetadata.executableName=deepseek-harness \
   --config.extraMetadata.homepage=https://deepseek.com \
   --publish never
 cd "$REPO_ROOT"

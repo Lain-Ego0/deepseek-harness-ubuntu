@@ -137,7 +137,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: DeepSeek Assistant Ubuntu ${{ github.ref_name }}
+          name: DeepSeek Harness Ubuntu ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           body: |
             Ubuntu packaging of [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness).
 

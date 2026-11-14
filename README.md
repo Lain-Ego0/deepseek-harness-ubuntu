@@ -2,7 +2,7 @@
 
 <div align="center">
 
-# DeepSeek Assistant · Ubuntu 社区版
+# DeepSeek Harness · Ubuntu 社区版
 
 **Unofficial Ubuntu packaging** — AppImage · `.deb` · APT repository
 
