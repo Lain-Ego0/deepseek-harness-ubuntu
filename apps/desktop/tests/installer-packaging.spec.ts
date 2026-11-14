@@ -1,6 +1,7 @@
 import { readInstallerLocales } from '../scripts/installer-locales.mjs'
 import { tmpdir } from 'node:os'
 import { readFileSync } from 'node:fs'
+import sharp from '../../web/node_modules/sharp/dist/index.mjs'
 import { Arch, Platform } from 'electron-builder'
 import { AppInfo, Packager } from 'app-builder-lib'
 import { expandMacro } from 'app-builder-lib/out/util/macroExpander.js'
@@ -36,6 +37,9 @@ describe('installer preparation preserves application dependencies', () => {
       const png = readFileSync(new URL(`../resources/linux-icons/${size}.png`, import.meta.url))
       expect(png.readUInt32BE(16)).toBe(size)
       expect(png.readUInt32BE(20)).toBe(size)
+      const decoded = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+      expect(decoded.data[3]).toBe(0)
+      expect(decoded.data[(Math.floor(size / 2) * size + Math.floor(size / 2)) * decoded.info.channels + 3]).toBeGreaterThan(0)
     }
   })
   it.each(['win32', 'darwin'] as const)('rejects a missing production policy before signing on %s', async (platform) => {
