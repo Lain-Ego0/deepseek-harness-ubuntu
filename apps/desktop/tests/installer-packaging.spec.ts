@@ -18,6 +18,26 @@ vi.mock('node:fs/promises', async importOriginal => ({
 }))
 
 describe('installer preparation preserves application dependencies', () => {
+  it('packages standard-size Linux icons and aligns GNOME launcher identity with the Electron window', async () => {
+    const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
+    const config = createElectronBuilderConfig({
+      DSH_DESKTOP_TARGET_PLATFORM: 'linux',
+      DSH_DESKTOP_TARGET_ARCH: 'x64',
+      DSH_DESKTOP_UNSIGNED: '1',
+      DSH_DESKTOP_APP_ID: 'com.deepseek.harness',
+      DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://example.invalid',
+      DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://example.invalid'] }),
+    }, 'linux', 'x64')
+    expect(config.extraMetadata.desktopName).toBe('deepseek-harness')
+    expect(config.linux.syncDesktopName).toBe(true)
+    const iconDirectory = config.linux.icon
+    expect(iconDirectory).toBe(new URL('../resources/linux-icons', import.meta.url).pathname)
+    for (const size of [16, 32, 64, 128, 256]) {
+      const png = readFileSync(new URL(`../resources/linux-icons/${size}.png`, import.meta.url))
+      expect(png.readUInt32BE(16)).toBe(size)
+      expect(png.readUInt32BE(20)).toBe(size)
+    }
+  })
   it.each(['win32', 'darwin'] as const)('rejects a missing production policy before signing on %s', async (platform) => {
     const { createElectronBuilderConfig } = await import('../scripts/electron-builder-config.mjs')
     expect(() => createElectronBuilderConfig({ DSH_DESKTOP_APP_ID: 'com.example.installer',

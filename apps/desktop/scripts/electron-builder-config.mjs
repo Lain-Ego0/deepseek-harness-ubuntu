@@ -114,6 +114,7 @@ export function createElectronBuilderConfig(
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
       ...(resolvedPlatform === 'linux' ? {
         description: 'DeepSeek Harness desktop client for Ubuntu — open-source agent harness by DeepSeek AI',
+        desktopName: 'deepseek-harness',
         homepage: 'https://github.com/Lain-Ego0/deepseek-harness-ubuntu',
         author: 'DeepSeek Harness Linux Community',
       } : {}),
@@ -264,7 +265,8 @@ export function createElectronBuilderConfig(
       target: ['AppImage', 'deb'],
       maintainer: 'DeepSeek Harness Linux Community <dsh-linux@example.invalid>',
       vendor: 'DeepSeek Harness Linux Community',
-      icon: fileURLToPath(new URL('../resources/icon-linux-512.png', import.meta.url)),
+      icon: fileURLToPath(new URL('../resources/linux-icons', import.meta.url)),
+      syncDesktopName: true,
     },
     deb: {
       depends: ['libc6', 'libgtk-3-0', 'libnss3', 'libasound2t64', 'libxss1'],
