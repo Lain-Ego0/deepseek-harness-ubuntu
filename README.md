@@ -103,3 +103,14 @@ pnpm install
 ## 许可
 
 MIT（继承上游）
+
+## 致谢
+
+### 上游项目
+
+- **[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)** — DeepSeek AI 官方开源的 agent harness（Everything is a Plugin 架构，基于 [Cordis](https://github.com/cordiverse/cordis)），本仓库是其 Ubuntu 打包层，agent 内核 / 插件体系 / Web UI 100% 来自上游，未做任何修改。MIT 许可。
+- **[Cordis](https://github.com/cordiverse/cordis)** — 上游的插件运行时框架，本项目的 Agent 能力直接依赖它的 "everything is a plugin" 范式。
+
+### 社区参考
+
+- **[Zhou-Yujing114514/deepseek-assistant-linux](https://github.com/Zhou-Yujing114514/deepseek-assistant-linux)** — 同类社区打包项目的先行者，其 README 与 pnpm 依赖补丁（`node-pty`、`app-builder-lib` 等）在早期调研阶段为本 fork 提供了 Ubuntu 构建已知坑的参考清单。
