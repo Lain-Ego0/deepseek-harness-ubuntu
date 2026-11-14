@@ -20,6 +20,7 @@ export function welcomeWindowOptions(platform: NodeJS.Platform, locale: DesktopL
     useContentSize: true,
     center: true,
     resizable: false,
+    autoHideMenuBar: true,
     maximizable: false,
     fullscreenable: false,
     show: false,

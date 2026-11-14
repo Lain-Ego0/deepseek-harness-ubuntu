@@ -268,6 +268,7 @@ function createWindow(preload: string, show = false, primary = false): BrowserWi
     minWidth: 520,
     minHeight: 600,
     show,
+    autoHideMenuBar: true,
     ...(process.platform === 'win32' && primary ? {
       backgroundColor: chromeFallbackFill(),
       titleBarStyle: 'hidden' as const,
