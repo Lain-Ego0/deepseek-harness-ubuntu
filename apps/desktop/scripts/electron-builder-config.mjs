@@ -112,6 +112,11 @@ export function createElectronBuilderConfig(
     extraMetadata: {
       dshDesktopAppId: appId,
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
+      ...(resolvedPlatform === 'linux' ? {
+        description: 'DeepSeek Assistant desktop client for Ubuntu — open-source agent harness by DeepSeek AI',
+        homepage: 'https://github.com/Lain-Ego0/deepseek-harness-ubuntu',
+        author: 'DeepSeek Assistant Linux Community',
+      } : {}),
       ...(policy === undefined ? {} : { dshMandatoryUpdatePolicy: policy }),
       ...buildVersion === productVersion ? {} : { version: buildVersion },
       ...packaged === undefined ? {} : { dshBuildCommit: packaged.commit, dshBuildDirty: packaged.dirty },
@@ -259,9 +264,11 @@ export function createElectronBuilderConfig(
       target: ['AppImage', 'deb'],
       maintainer: 'DeepSeek Assistant Linux Community <dsh-linux@example.invalid>',
       vendor: 'DeepSeek Assistant Linux Community',
+      icon: fileURLToPath(new URL('../resources/icon-linux-512.png', import.meta.url)),
     },
     deb: {
       depends: ['libc6', 'libgtk-3-0', 'libnss3', 'libasound2t64', 'libxss1'],
+      synopsis: 'DeepSeek Assistant desktop client for Ubuntu',
     },
     nsis: {
       uninstallDisplayName: '${productName}',
