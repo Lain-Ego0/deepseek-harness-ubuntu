@@ -73,13 +73,15 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     needs: [sync-upstream]
-    if: always() && !failure() && !cancelled()
+    if: >-
+      always() && !cancelled()
+      && (needs.sync-upstream.result == 'success' || needs.sync-upstream.result == 'skipped')
     steps:
-      # 关键：sync push 之后 master 已更新，这里 checkout 最新 master
+      # 关键：按触发 ref 检出；tag 触发时必须构建 tag 本身
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: master
+          ref: ${{ github.ref }}
 
       - uses: actions/setup-node@v4
         with:
@@ -129,6 +131,9 @@ jobs:
       && startsWith(github.ref_name, 'ubuntu-v')
       && needs.build.result == 'success'
     steps:
+      - name: Resolve release version
+        run: echo "RELEASE_VERSION=V${GITHUB_REF_NAME#ubuntu-v}" >> "$GITHUB_ENV"
+
       - uses: actions/download-artifact@v4
         with:
           name: linux-artifacts
@@ -137,7 +142,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: DeepSeek Harness Ubuntu ${{ github.ref_name }}
+          name: DeepSeek Harness Desktop Ubuntu ${{ env.RELEASE_VERSION }}
           tag_name: ${{ github.ref_name }}
           body: |
             Ubuntu packaging of [deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness).
