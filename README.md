@@ -1,112 +1,112 @@
-<!-- FORK NOTICE: Ubuntu packaging fork of deepseek-ai/deepseek-harness -->
+# DeepSeek Harness
 
-<div align="center">
+English | [中文](README.zh.md)
 
-# DeepSeek Harness · Ubuntu 社区版
+DeepSeek Harness (`dsh`) is an open-source agent harness developed by [DeepSeek AI](https://deepseek.com).
 
-**Unofficial Ubuntu packaging** — AppImage · `.deb` · APT repository
+It is built on an **everything-is-a-plugin** architecture and powered by [Cordis](https://github.com/cordiverse/cordis), whose design is described in [_A Programming Paradigm for Spatiotemporal Composability_](https://arxiv.org/abs/2608.25512).
 
-Fork of [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness) · not affiliated with DeepSeek AI
+Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
-[![CI Ubuntu](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/actions/workflows/ubuntu-package.yml/badge.svg)](./.github/workflows/ubuntu-package.yml)
-[![Latest Release](https://img.shields.io/github/v/release/Lain-Ego0/deepseek-harness-ubuntu?include_prereleases&label=release&sort=semver)](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+## Ubuntu community builds
 
-</div>
+This community fork adds Ubuntu desktop packaging to upstream `master`; it retains the upstream agent, plugin, and Web UI capabilities.
 
----
+### Debian package
 
-> [!IMPORTANT]
-> **官方桌面端只发布 macOS 和 Windows**。本仓库在官方 `master` 之上补齐 **Ubuntu 打包层**（不改 agent 内核），保留上游全部 agent / 插件 / Web UI 能力。
-
-## 安装（Ubuntu 24.04 / 22.04）
-
-### GitHub Release 下载（推荐）
-
-到 [Releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases) 页面下载最新的 `deepseek-harness-*-linux-amd64-unsigned.deb`：
+On Ubuntu 24.04 or 22.04, download the latest `deepseek-harness-*-linux-amd64-unsigned.deb` from [Ubuntu community releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases), then install it:
 
 ```bash
 sudo dpkg -i deepseek-harness-*.deb
-sudo apt -f install   # 依赖缺失时自动补齐
+sudo apt -f install
 ```
 
-升级 = 下载新 deb + `dpkg -i`。GitHub Actions 每日 UTC 20:00 自动 merge 上游并构建；手动升级可自己打 tag 触发。
+### AppImage
 
-### AppImage（免安装）
-
-### AppImage（免安装）
+Download the latest x86_64 AppImage from [Ubuntu community releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases), then run:
 
 ```bash
 chmod +x deepseek-harness-*-linux-x86_64-unsigned.AppImage
 ./deepseek-harness-*-linux-x86_64-unsigned.AppImage
 ```
 
-> AppImage 首次启动如果提示 sandbox 错误：`chmod 4755` 里面的 `chrome-sandbox`，或加 `--no-sandbox`（不推荐）。
-
-## 从源码构建
+### Build from source
 
 ```bash
 pnpm install
-./scripts/linux/package-ubuntu.sh x64    # 或 arm64
+./scripts/linux/package-ubuntu.sh x64   # or arm64
 ```
 
-产物输出到 `apps/desktop/.desktop-build/targets/linux-*/unsigned-artifacts/`。
+Artifacts are written to `apps/desktop/.desktop-build/targets/linux-*/unsigned-artifacts/`.
 
-## Fork 初始化（一次性）
+### Automated releases and limitations
 
-1. **启用 Actions**：Settings → Actions → General → Allow all actions
-2. **禁用上游 workflow**（自动完成）：`ubuntu-package.yml` 里的 `disable-upstream` job 会在每日 schedule 或手动触发时自动禁用上游的 34 个 workflow，只需等它跑一次即可（首次约 5 分钟）。也可手动用 `./scripts/ci/disable-upstream-workflows.sh`（需 gh CLI）。
-3. **无其他配置**：GitHub Releases 默认开启；每日 UTC 20:00 自动构建。
+GitHub Actions merges upstream and builds daily at 20:00 UTC. Pushing a `ubuntu-v*` tag publishes a release with Debian and AppImage packages and SHA-256 checksums. Debian packages use the apt upgrade path; AppImage updates require downloading a newer release. Linux builds use the local profile because the upstream signing and notarization path does not support Linux.
 
-## CI 自动发布
+## Developer preview
 
-`.github/workflows/ubuntu-package.yml`：
+DeepSeek Harness is in _developer preview_ and iterating rapidly. **THERE WILL BE COMPATIBILITY-BREAKING CHANGES.**
 
-| 触发 | 动作 |
-|---|---|
-| 每天 UTC 20:00（北京时间 04:00） | merge upstream/master → 构建 AppImage + deb → artifacts 保留 7 天 |
-| `push` tag `ubuntu-v*` | 构建 → 发布 GitHub Release（deb + AppImage + SHA256SUMS） |
-| `workflow_dispatch` | 手动触发（含 sync） |
+Review the [safety notice](SAFETY.md) before running the project.
 
-无需任何 secret 配置。
+## Run
 
+### Run from `npm`
 
-## 与上游的差异（全部为打包层）
+Install `Node.js`, then run:
 
-<details>
-<summary>9 个文件改动（点击展开）</summary>
+```sh
+npx @deepseek-ai/dsh web
+```
 
-| 文件 | 变更 |
-|---|---|
-| `apps/desktop/scripts/desktop-build-paths.mjs` | SUPPORTED_TARGETS 加入 linux-x64/linux-arm64 |
-| `apps/desktop/scripts/prepare-runtime.ts` | Electron 可执行文件路径加 linux 分支 |
-| `apps/desktop/scripts/prepare-dsh.ts` | 同上 |
-| `apps/desktop/src/main.ts` | 策略平台检查 + platformView 平台分支加 linux |
-| `apps/desktop/src/mandatory-update-policy.ts` | platform 类型加 linux |
-| `packages/credentials/deepseek-account/src/client-metadata.ts` | 请求头加 desktop-linux |
-| `packages/credentials/deepseek-account/src/index.ts` | platform 类型加 linux |
-| `apps/desktop/src/platform-view.ts` | platform 类型加 linux |
-| `apps/desktop/scripts/electron-builder-config.mjs` | linux target 加 deb + maintainer/vendor |
+The command starts the Web UI at `http://127.0.0.1:3080` by default and opens it in the default browser for a local launch. An SSH launch only prints the host URL because the SSH client or editor owns the local forwarded address. Pass `--no-open` to run the server without opening a browser. See [Web UI guide](docs/user/guide/index.md).
 
-</details>
+### Run from source
 
-## 已知限制
+To run from a repository checkout:
 
-- 应用内自动更新走 apt 通道（deb）或 GitHub Releases（AppImage 手动升级）；官方 electron-updater 通用通道需自建 HTTPS feed
-- 必须使用 `--profile local` 构建（官方未提供 Linux 签名/公证路径）
-- Office 文档转换（DOCX/XLSX/PPTX→PDF）**已验证可用**
+```sh
+git clone https://github.com/deepseek-ai/deepseek-harness.git
+cd deepseek-harness
+pnpm install
+pnpm run build
+pnpm dsh web
+```
 
-## 上游完整文档
+`pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
 
-完整上游说明（含架构、插件、API 等）见 [`README.md.upstream`](./README.md.upstream)，或访问 [deepseek-harness 文档站](https://deepseek-harness.github.io/deepseek-harness/)。
+## Community and support
 
-## 许可
+- Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).
+- Add the [`dsh-plugin`](https://github.com/topics/dsh-plugin) topic to your plugin repository for discoverability.
+- Join <a href="https://discord.gg/4MrtZUhpxg">DeepSeek Harness Discord community</a>.
 
-MIT（继承上游）
+## Contributing
 
-## 致谢
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-### 上游项目
+## Development
 
-- **[deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)** — DeepSeek AI 官方开源的 agent harness（Everything is a Plugin 架构，基于 [Cordis](https://github.com/cordiverse/cordis)），本仓库是其 Ubuntu 打包层，agent 内核 / 插件体系 / Web UI 100% 来自上游，未做任何修改。MIT 许可。
-- **[Cordis](https://github.com/cordiverse/cordis)** — 上游的插件运行时框架，本项目的 Agent 能力直接依赖它的 "everything is a plugin" 范式。
+Start with the [development guide](docs/development.md) and [architecture documentation](docs/architecture.md).
+
+`pnpm run dev:web` builds, serves, and rebuilds client bundles on source edits in one terminal, and `make help` lists the matching Make targets for Web and Desktop; the guide's application commands section owns the full table.
+
+For agents, follow [AGENTS.md](AGENTS.md).
+
+## Citation
+
+```bibtex
+@misc{deepseek-harness2026,
+  title={DeepSeek Harness: Everything is a Plugin},
+  author={DeepSeek-AI},
+  year={2026},
+  publisher={GitHub},
+  howpublished={\url{https://github.com/deepseek-ai/deepseek-harness}},
+}
+```
+
+## License
+
+[MIT](LICENSE)
+
+Third-party dependencies and their licenses are disclosed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

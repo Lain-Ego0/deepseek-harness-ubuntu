@@ -8,6 +8,41 @@ DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的�
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
+## Ubuntu 社区版
+
+本社区分支在上游 `master` 基础上增加 Ubuntu 桌面打包，同时保留上游的 agent、插件和 Web UI 能力。
+
+### Debian 包
+
+在 Ubuntu 24.04 或 22.04 上，从 [Ubuntu 社区版发布页](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases)下载最新的 `deepseek-harness-*-linux-amd64-unsigned.deb`，然后安装：
+
+```bash
+sudo dpkg -i deepseek-harness-*.deb
+sudo apt -f install
+```
+
+### AppImage
+
+从 [Ubuntu 社区版发布页](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases)下载最新 x86_64 AppImage，然后运行：
+
+```bash
+chmod +x deepseek-harness-*-linux-x86_64-unsigned.AppImage
+./deepseek-harness-*-linux-x86_64-unsigned.AppImage
+```
+
+### 从源码构建
+
+```bash
+pnpm install
+./scripts/linux/package-ubuntu.sh x64   # or arm64
+```
+
+产物输出到 `apps/desktop/.desktop-build/targets/linux-*/unsigned-artifacts/`。
+
+### 自动发布与限制
+
+GitHub Actions 每天 UTC 20:00 合并上游并构建。推送 `ubuntu-v*` 标签会发布包含 Debian 包、AppImage 和 SHA-256 校验和的 Release。Debian 包通过 apt 通道升级；AppImage 需要下载新版本。由于上游签名与公证流程不支持 Linux，Linux 构建使用 local profile。
+
 ## 开发者预览
 
 DeepSeek Harness 处于 _开发者预览_ 阶段，正在快速迭代。**未来将出现破坏兼容性的变更。**

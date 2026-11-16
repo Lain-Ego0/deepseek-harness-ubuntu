@@ -5,6 +5,21 @@
 /deepseek-harness:
   en: f68c4f080ce55ff2
   zh: 88a76d7f7f0b260e
+/deepseek-harness/ubuntu-community-builds:
+  en: 550d30d41d288285
+  zh: 019a6a4821eb01f0
+/deepseek-harness/ubuntu-community-builds/debian-package:
+  en: b75ca557569c0704
+  zh: f69068597acc4979
+/deepseek-harness/ubuntu-community-builds/appimage:
+  en: fc7a8276a301090a
+  zh: 8c97c659c3e71f9f
+/deepseek-harness/ubuntu-community-builds/build-from-source:
+  en: 7a269118908409d1
+  zh: f11b491f0716e9e9
+/deepseek-harness/ubuntu-community-builds/automated-releases-and-limitations:
+  en: dffd6f606aafc96d
+  zh: 4744bf02699e242d
 /deepseek-harness/developer-preview:
   en: 4ef4d8a71ac143f0
   zh: 1bfc3149ba8e5543
