@@ -75,7 +75,7 @@ const harness = await vi.hoisted(async () => {
   const updateDownload = vi.fn(async (_version: string, _revision?: number): Promise<DesktopUpdateState> => updateState)
   const updateInstall = vi.fn(async (_version: string, _revision?: number): Promise<DesktopUpdateState> => updateState)
   const popup = vi.fn<(options: { window: FakeWindow; x?: number; y?: number; callback?: () => void }) => void>()
-  const menuBuilder = vi.fn<(template: MenuItemConstructorOptions[]) => { popup: typeof popup }>(() => ({ popup }))
+  const menuBuilder = vi.fn<(template: MenuItemConstructorOptions[]) => { popup: typeof popup; template: MenuItemConstructorOptions[] }>(template => ({ popup, template }))
   const menu = Object.assign(menuBuilder, { buildFromTemplate: menuBuilder, setApplicationMenu: vi.fn() })
   class FakeWindow extends EventEmitter {
     destroyed = false
@@ -214,6 +214,7 @@ const harness = await vi.hoisted(async () => {
   class FakeTray extends EventEmitter {
     readonly setToolTip = vi.fn()
     readonly setContextMenu = vi.fn()
+    readonly popUpContextMenu = vi.fn()
     readonly destroy = vi.fn()
     constructor(readonly image: unknown) { super(); trays.push(this) }
   }
@@ -826,7 +827,7 @@ describe('desktop main startup', () => {
       'separator', ...packaged ? [] : [messages.reloadPageMenu, messages.restartAppHostMenu],
       messages.toggleDevToolsMenu, 'separator',
       ...platform === 'darwin' ? [messages.hideApplication, messages.hideOtherApplications, messages.showAllApplications, 'separator'] : [],
-      'quit',
+      ...platform === 'linux' ? [] : ['quit'],
     ])
     expect(visible.filter(item => item.role === 'toggleDevTools')).toEqual([
       { role: 'toggleDevTools', label: messages.toggleDevToolsMenu },
@@ -848,7 +849,7 @@ describe('desktop main startup', () => {
       { sender, senderFrame: sender.mainFrame }, nextLocale,
     )
     const refreshed = platform === 'win32' ? applicationMenuItems()
-      : harness.menu.mock.lastCall![0][0]!.submenu as MenuItemConstructorOptions[]
+      : (harness.menu.setApplicationMenu.mock.lastCall![0] as { template: MenuItemConstructorOptions[] }).template[0]!.submenu as MenuItemConstructorOptions[]
     expect(refreshed.filter(item => item.role === 'toggleDevTools' && item.visible !== false)).toEqual([
       { role: 'toggleDevTools', label: nextLocale === 'en' ? en.toggleDevToolsMenu : zh.toggleDevToolsMenu },
     ])
@@ -1440,7 +1441,9 @@ describe('desktop main startup', () => {
     const application = template[0]!.submenu as MenuItemConstructorOptions[]
     expect(application.filter(item => item.visible !== false).map(describeItem)).toEqual(platform === 'darwin'
       ? ['about', 'separator', en.checkUpdatesMenu, en.cliCommandMenu, 'separator', 'toggleDevTools', 'separator', 'hide', 'hideOthers', 'unhide', 'separator', 'quit']
-      : ['about', 'separator', en.checkUpdatesMenu, 'separator', 'toggleDevTools', 'separator', 'quit'])
+      : platform === 'linux'
+        ? ['about', 'separator', en.checkUpdatesMenu, 'separator', 'toggleDevTools', 'separator']
+        : ['about', 'separator', en.checkUpdatesMenu, 'separator', 'toggleDevTools', 'separator', 'quit'])
     expect(harness.menu.setApplicationMenu).toHaveBeenCalledOnce()
   })
 
@@ -1695,6 +1698,31 @@ describe('desktop main startup', () => {
     host.exited.resolve()
     await harness.quitCompleted.promise
     expect(harness.trays[0]!.destroy).toHaveBeenCalledOnce()
+  })
+
+  it('shows a Linux tray conversation menu and requires explicit confirmation for its Quit action', async () => {
+    vi.stubGlobal('process', { ...process, platform: 'linux', arch: 'x64', resourcesPath: 'desktop-test-resources' })
+    const host = await readyWorkspace()
+    const window = harness.windows[0]!
+    expect(harness.trays).toHaveLength(1)
+    expect(harness.trays[0]!.image).toEqual({ path: join('desktop-test-resources', 'tray-linux.png') })
+    const publish = harness.ipcOn.mock.calls.find(([channel]) => channel === DESKTOP_IPC.trayRecentConversations)![1]
+    publish({ sender: window.webContents, senderFrame: window.webContents.mainFrame }, [
+      { sessionId: '123e4567-e89b-42d3-a456-426614174000', title: 'Recent chat' },
+    ])
+    const menu = harness.trays[0]!.setContextMenu.mock.lastCall![0] as { template: MenuItemConstructorOptions[] }
+    expect(menu.template.map(item => item.label ?? item.type)).toEqual([
+      en.recentConversations, 'Recent chat', en.moreConversations, 'separator', en.newChat, 'separator',
+      en.openApplication, 'separator', en.quitApplication,
+    ])
+    harness.dialog.showMessageBox.mockResolvedValueOnce({ response: 1, checkboxChecked: false })
+    ;(menu.template.at(-1) as { click: () => void }).click()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(host.inspectQuit).toHaveBeenCalledOnce()
+    expect(harness.dialog.showMessageBox).toHaveBeenCalledWith(expect.objectContaining({
+      message: en.quitTitle, detail: en.quitNoTasks, buttons: [en.quit, en.cancel],
+    }))
+    expect(host.stop).not.toHaveBeenCalled()
   })
 
   it('routes closing through the tray confirmation and keeps the Host running', async () => {

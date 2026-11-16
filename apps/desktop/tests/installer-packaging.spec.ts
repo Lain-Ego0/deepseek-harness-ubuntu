@@ -31,6 +31,9 @@ describe('installer preparation preserves application dependencies', () => {
     }, 'linux', 'x64')
     expect(config.extraMetadata.desktopName).toBe('deepseek-harness')
     expect(config.linux.syncDesktopName).toBe(true)
+    expect(config.extraResources).toContainEqual({
+      from: new URL('../resources/icon-linux-16.png', import.meta.url).pathname, to: 'tray-linux.png',
+    })
     const iconDirectory = config.linux.icon
     expect(iconDirectory).toBe(new URL('../resources/linux-icons', import.meta.url).pathname)
     for (const size of [16, 32, 64, 128, 256]) {

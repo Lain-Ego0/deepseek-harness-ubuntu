@@ -5,7 +5,7 @@ import type { DesktopQuitInspection } from './host-process.ts'
 import type { DesktopLocale, DesktopMessages } from './locale.ts'
 
 /** Locale key of the explanation shown before quitting, or none when quitting interrupts nothing. */
-export type DesktopQuitPrompt = Extract<keyof DesktopMessages, 'quitActiveTasks' | 'quitScheduledTasks' | 'quitActiveAndScheduledTasks'> | undefined
+export type DesktopQuitPrompt = Extract<keyof DesktopMessages, 'quitActiveTasks' | 'quitScheduledTasks' | 'quitActiveAndScheduledTasks' | 'quitNoTasks'> | undefined
 
 /**
  * Choose the confirmation copy for one inspection result.
@@ -23,7 +23,7 @@ export function resolveDesktopQuitPrompt(inspection: DesktopQuitInspection | 'un
 /** Main-process collaborators of the confirmation. */
 export interface DesktopQuitConfirmationOptions {
   readonly locale: () => DesktopLocale
-  /** Start one Host inspection; undefined while no Host is ready, when nothing can be running and the quit proceeds. */
+  /** Start one Host inspection; undefined when no Host is ready, so ordinary quit proceeds and forced tray quit still asks. */
   readonly inspect: () => Promise<DesktopQuitInspection> | undefined
   /** Native message box without an owner window: hidden windows stay hidden and the box comes to the front. */
   readonly show: (options: MessageBoxOptions) => Promise<MessageBoxReturnValue>
@@ -47,13 +47,13 @@ export class DesktopQuitConfirmation {
    * while the confirmation is open does not change its copy, and approval never re-inspects.
    * @returns true to quit now, false when the user cancelled.
    */
-  confirm(): Promise<boolean> {
+  confirm(force = false): Promise<boolean> {
     if (this.disposed) return Promise.resolve(false)
     if (this.pending !== undefined) {
       this.options.focus()
       return this.pending
     }
-    const pending = this.decide().finally(() => { if (this.pending === pending) this.pending = undefined })
+    const pending = this.decide(force).finally(() => { if (this.pending === pending) this.pending = undefined })
     this.pending = pending
     return pending
   }
@@ -65,15 +65,20 @@ export class DesktopQuitConfirmation {
    */
   dispose(): void { this.disposed = true }
 
-  private async decide(): Promise<boolean> {
+  private async decide(force: boolean): Promise<boolean> {
     const inspection = this.options.inspect()
-    if (inspection === undefined) return true
+    if (inspection === undefined) return force ? this.show('quitNoTasks') : true
     const prompt = resolveDesktopQuitPrompt(await inspection.catch((error: unknown) => {
       console.warn('desktop quit: task inspection unavailable', error)
       return 'unknown' as const
     }))
     if (this.disposed) return false
-    if (prompt === undefined) return true
+    if (prompt === undefined && !force) return true
+    return this.show(prompt ?? 'quitNoTasks')
+  }
+
+  private async show(prompt: Exclude<DesktopQuitPrompt, undefined>): Promise<boolean> {
+    if (this.disposed) return false
     const { messages } = this.options.locale()
     const windows = (this.options.platform ?? process.platform) === 'win32'
     // Button order follows each platform: macOS lays buttons out right-to-left from index 0, so

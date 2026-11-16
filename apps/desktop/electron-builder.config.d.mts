@@ -14,12 +14,12 @@ export interface DesktopElectronBuilderConfig {
     { readonly from: string, readonly to: 'dsh', readonly filter: readonly ['**/*'] },
     { readonly from: string, readonly to: 'dsh/node_modules', readonly filter: readonly ['**/*'] },
   ]
-  readonly extraMetadata: { readonly dshDesktopAppId: string }
+  readonly extraMetadata: { readonly dshDesktopAppId: string; readonly desktopName?: string }
   readonly asarUnpack: readonly string[]
   readonly extraResources: readonly [
     { readonly from: string, readonly to: 'runtime' },
     { readonly from: string, readonly to: 'icon.png' },
-    ...{ readonly from: string, readonly to: 'tray.ico' }[],
+    ...({ readonly from: string, readonly to: 'tray.ico' } | { readonly from: string, readonly to: 'tray-linux.png' })[],
   ]
   readonly mac: {
     readonly extendInfo: {
@@ -37,6 +37,10 @@ export interface DesktopElectronBuilderConfig {
     readonly format: 'ULMO'
     readonly sign: boolean
     readonly writeUpdateInfo: boolean
+  }
+  readonly linux: {
+    readonly icon: string
+    readonly syncDesktopName: boolean
   }
   readonly win: {
     readonly forceCodeSigning: boolean

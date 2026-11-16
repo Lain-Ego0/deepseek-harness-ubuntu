@@ -40,6 +40,8 @@ export const DESKTOP_IPC = {
   updatesStatus: 'dsh-desktop:updates-status',
   updatesOpen: 'dsh-desktop:updates-open',
   updatesPresentation: 'dsh-desktop:updates-presentation',
+  trayRecentConversations: 'dsh-desktop:tray-recent-conversations',
+  trayAction: 'dsh-desktop:tray-action',
   nativeThemeSet: 'dsh-desktop:native-theme-set',
   windowFullscreen: 'dsh-desktop:window-fullscreen',
   windowsAppearance: 'dsh-desktop:windows-appearance',
@@ -96,6 +98,10 @@ export interface DshDesktopProductApi {
   readonly browser: DesktopBrowserBridge
   readonly fileDrag: DesktopFileDrag
   readonly keyboard: DesktopKeyboardApi
+  readonly tray: {
+    updateRecentConversations(conversations: readonly DesktopRecentConversation[]): void
+    onAction(listener: (action: DesktopTrayAction) => void): () => void
+  }
   readonly shortcuts: DesktopShortcutsApi
   /**
    * Local machine description for the feedback questionnaire.
@@ -126,3 +132,6 @@ export function assertDesktopSender(event: IpcMainInvokeEvent, hostnames: readon
     throw new Error('dsh desktop: rejected IPC from an unowned renderer')
   }
 }
+
+export interface DesktopRecentConversation { readonly sessionId: string; readonly title: string }
+export type DesktopTrayAction = { readonly kind: 'new' | 'more' } | { readonly kind: 'open-session'; readonly sessionId: string }

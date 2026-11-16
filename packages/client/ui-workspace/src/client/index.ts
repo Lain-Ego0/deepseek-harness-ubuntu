@@ -51,6 +51,7 @@ import {
 import { createWorkspaceShortcutControls, installWorkspaceShortcuts } from './shortcuts.ts'
 import { UiWorkspaceService } from './navigation.ts'
 import { createWorkspaceViewStore } from './stores.ts'
+import { connectDesktopTray } from './desktop-tray.ts'
 import { WorkspaceBrowser } from './rows/WorkspaceBrowser.tsx'
 import { ArchiveSessionRowButton, SessionArchiveConfirmDialog } from './session-actions/ArchiveSession.tsx'
 import { derive } from './session-actions/derived.ts'
@@ -172,6 +173,11 @@ export function apply(ctx: Context): void {
   })
   ctx.effect(() => ctx.locale.register(NS, { zh, en, ja, es, fr, de, ru, pt }), 'ui-workspace: dictionaries')
   const shortcutControls = createWorkspaceShortcutControls()
+  ctx.effect(() => {
+    const bridge = window.dshDesktop?.tray
+    if (bridge === undefined) return () => {}
+    return connectDesktopTray(bridge, sessions.list, uiWorkspace, shortcutControls.search)
+  }, 'ui-workspace: Desktop tray')
 
   const searchSessions: WorkspaceBrowserInjected['searchSessions'] = async (query, signal) => {
     const result = await sessions.search(query, signal)
@@ -446,3 +452,5 @@ function activeSessionRefusal(reason: unknown): readonly SessionActivity[] | und
   const { rpcError } = reason as WorkspaceArchiveError
   return rpcError.code === 'workspace/session-active' ? rpcError.details.activity : undefined
 }
+
+export type { DesktopRecentConversation, DesktopTrayAction, DesktopTrayBridge } from './desktop-tray.ts'

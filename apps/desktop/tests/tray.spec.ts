@@ -9,6 +9,7 @@ const native = await vi.hoisted(async () => {
   class FakeTray extends EventEmitter {
     readonly setToolTip = vi.fn()
     readonly setContextMenu = vi.fn()
+    readonly popUpContextMenu = vi.fn()
     readonly destroy = vi.fn()
     constructor(readonly image: unknown) { super(); trays.push(this) }
   }
@@ -69,4 +70,35 @@ it('relabels the menu in the current locale and ignores relabel after disposal',
   expect(f.native.destroy).toHaveBeenCalledOnce()
   f.tray.relabel()
   expect(native.menus).toHaveLength(2)
+})
+
+it('builds the Linux recent-conversation menu for native tray activation', () => {
+  let conversations = [{ sessionId: 'session-1', title: 'Recent chat' }]
+  const openConversation = vi.fn()
+  const newChat = vi.fn()
+  const moreConversations = vi.fn()
+  const f = setup()
+  const tray = new DesktopTray({ iconPath: '/app/tray.png', locale: () => resolveDesktopLocale('en'),
+    open: f.open, quit: f.quit, showMenuOnClick: true,
+    recentConversations: () => conversations,
+    openConversation, newChat, moreConversations,
+  })
+  const nativeTray = native.trays.at(-1)!
+  expect(labels(native.menus.at(-1)!)).toEqual([
+    'Recent conversations', 'Recent chat', 'More conversations…', 'separator', 'New Chat', 'separator',
+    'Open DeepSeek Harness', 'separator', 'Quit DeepSeek Harness',
+  ])
+  ;(native.menus.at(-1)![1] as { click: () => void }).click()
+  ;(native.menus.at(-1)![2] as { click: () => void }).click()
+  ;(native.menus.at(-1)![4] as { click: () => void }).click()
+  expect(openConversation).toHaveBeenCalledExactlyOnceWith('session-1')
+  expect(moreConversations).toHaveBeenCalledOnce()
+  expect(newChat).toHaveBeenCalledOnce()
+  nativeTray.emit('click')
+  expect(nativeTray.popUpContextMenu).not.toHaveBeenCalled()
+  expect(f.open).not.toHaveBeenCalled()
+  conversations = []
+  tray.relabel()
+  expect(labels(native.menus.at(-1)!)).toContain('No recent conversations')
+  tray.dispose()
 })

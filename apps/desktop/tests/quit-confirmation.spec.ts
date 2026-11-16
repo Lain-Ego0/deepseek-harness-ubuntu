@@ -111,3 +111,10 @@ describe('DesktopQuitConfirmation', () => {
     expect(await pending).toBe(false)
   })
 })
+
+it('always asks before an explicit tray quit, even when no Host work is active', async () => {
+  const f = setup('linux', async () => ({ activeTasks: false, scheduledTasks: false }), 'en')
+  f.answer(1)
+  expect(await f.confirmation.confirm(true)).toBe(false)
+  expect(f.shown[0]?.detail).toBe('The application and its background services will close.')
+})

@@ -34,7 +34,7 @@ import { installDesktopFileDrag } from './file-drag.ts'
 import { installDesktopDirectoryPicker } from './directory-picker.ts'
 import { installMicrophonePermissions } from './microphone-permissions.ts'
 import { DesktopBackendController } from './backend-controller.ts'
-import { DESKTOP_IPC, SCHEME, assertDesktopSender, type DesktopUpdateState } from './ipc.ts'
+import { DESKTOP_IPC, SCHEME, assertDesktopSender, type DesktopRecentConversation, type DesktopTrayAction, type DesktopUpdateState } from './ipc.ts'
 import { readDeviceInfo } from './device-info.ts'
 import { desktopUpdateReadyConfirmation, formatDesktopMessage, resolveDesktopLocale, resolveDesktopStartupLocale } from './locale.ts'
 import type { DesktopMessages } from './locale.ts'
@@ -447,6 +447,9 @@ async function main(): Promise<void> {
   let mandatoryUI: DesktopMandatoryUpdateWindow | undefined
   let policyAuth: DesktopPolicyTestAuth | undefined
   let tray: DesktopTray | undefined
+  let trayRecentConversations: DesktopRecentConversation[] = []
+  let trayWorkspaceReady = false
+  let forceTrayQuitConfirmation = false
   /**
    * The operating system is ending the session: the quit skips its confirmation. Windows sets it
    * on the definitive session-end message. macOS sets it on the power-off notification, which
@@ -906,6 +909,22 @@ async function main(): Promise<void> {
     windowsLanguage = locale.id
     refreshApplicationMenu()
   })
+  ipcMain.on(DESKTOP_IPC.trayRecentConversations, (event, value: unknown) => {
+    const window = mainWindow
+    if (window === undefined || event.sender !== window.webContents || event.senderFrame !== window.webContents.mainFrame
+      || !event.senderFrame.url.startsWith(`${SCHEME}://app/`) || !Array.isArray(value) || value.length > 7) return
+    const conversations: DesktopRecentConversation[] = []
+    for (const candidate of value) {
+      if (typeof candidate !== 'object' || candidate === null || !('sessionId' in candidate) || !('title' in candidate)
+        || typeof candidate.sessionId !== 'string' || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu.test(candidate.sessionId)
+        || typeof candidate.title !== 'string' || candidate.title.trim() === '' || candidate.title.length > 240
+        || /[\u0000-\u001f\u007f]/u.test(candidate.title)) return
+      conversations.push({ sessionId: candidate.sessionId, title: candidate.title })
+    }
+    trayRecentConversations = conversations
+    trayWorkspaceReady = true
+    tray?.relabel()
+  })
   ipcMain.handle(DESKTOP_IPC.updatesChannelGet, (event) => {
     assertProductSender(event)
     return channelState
@@ -1224,8 +1243,9 @@ async function main(): Promise<void> {
     { role: 'toggleDevTools', label: currentDesktopLocale().messages.toggleDevToolsMenu },
     { type: 'separator' },
     ...hideCommands,
-    { role: 'quit', ...(darwin ? { label: currentDesktopLocale().messages.quitApplication }
-      : process.platform === 'win32' ? { label: currentDesktopLocale().messages.exitApplication } : {}) },
+    ...(process.platform === 'linux' ? [] : [{ role: 'quit' as const,
+      ...(darwin ? { label: currentDesktopLocale().messages.quitApplication }
+        : { label: currentDesktopLocale().messages.exitApplication }) }]),
   ]
   const devToolsF12Shortcut: MenuItemConstructorOptions = { role: 'toggleDevTools', visible: false, accelerator: 'F12' }
   const windowsDevToolsShortcuts: MenuItemConstructorOptions[] = [
@@ -1240,13 +1260,30 @@ async function main(): Promise<void> {
       }, ...platformMenus()]))
     tray?.relabel()
   }
+  const dispatchTrayAction = (action: DesktopTrayAction): void => {
+    if (!enteredWorkspace || mainWindow === undefined || mainWindow.isDestroyed()) return
+    focusPrimaryWindow()
+    mainWindow.webContents.send(DESKTOP_IPC.trayAction, action)
+  }
   refreshApplicationMenu()
-  const trayIconPath = development ? join(app.getAppPath(), 'resources', 'tray-windows.ico') : join(process.resourcesPath, 'tray.ico')
-  if (process.platform === 'win32') {
-    // The tray is the way back to a hidden window; without it, relaunching the application still focuses it.
+  const linuxTray = process.platform === 'linux'
+  const trayIconPath = linuxTray
+    ? development ? join(app.getAppPath(), 'resources', 'icon-linux-16.png') : join(process.resourcesPath, 'tray-linux.png')
+    : development ? join(app.getAppPath(), 'resources', 'tray-windows.ico') : join(process.resourcesPath, 'tray.ico')
+  if (process.platform === 'win32' || linuxTray) {
+    // Linux keeps a native menu available while the primary window is hidden; Windows retains its Open/Quit tray.
     try {
       tray = new DesktopTray({ iconPath: trayIconPath, locale: currentDesktopLocale,
-        open: () => { focusPrimaryWindow() }, quit: () => { app.quit() } })
+        open: () => { focusPrimaryWindow() }, quit: () => { forceTrayQuitConfirmation = linuxTray; app.quit() },
+        ...(linuxTray ? {
+          showMenuOnClick: true,
+          workspaceReady: () => trayWorkspaceReady,
+          recentConversations: () => trayRecentConversations,
+          openConversation: (sessionId: string) => { dispatchTrayAction({ kind: 'open-session', sessionId }) },
+          newChat: () => { dispatchTrayAction({ kind: 'new' }) },
+          moreConversations: () => { dispatchTrayAction({ kind: 'more' }) },
+        } : {}),
+      })
     } catch (error) { console.warn('desktop tray: unavailable', error) }
   }
   const backgroundNotice = process.platform === 'win32'
@@ -1538,7 +1575,9 @@ async function main(): Promise<void> {
     if (quitting) return
     event.preventDefault()
     if (skipQuitConfirmation || sessionEnding) { finishQuit(); return }
-    void quitConfirmation.confirm().then((approved) => {
+    const forceConfirmation = forceTrayQuitConfirmation
+    forceTrayQuitConfirmation = false
+    void quitConfirmation.confirm(forceConfirmation).then((approved) => {
       if (quitting || shellInstallerOwnsQuit) return
       if (approved) { finishQuit(); return }
       // A quit that started from closing the welcome window destroyed it; a cancelled quit needs it back.
