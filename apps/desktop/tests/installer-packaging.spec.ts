@@ -29,8 +29,9 @@ describe('installer preparation preserves application dependencies', () => {
       DSH_DESKTOP_MANDATORY_UPDATE_TEST_ORIGIN: 'https://example.invalid',
       DSH_DESKTOP_MANDATORY_UPDATE_CONFIG: JSON.stringify({ allowedAuthOrigins: ['https://example.invalid'] }),
     }, 'linux', 'x64')
-    expect(config.extraMetadata.desktopName).toBe('deepseek-harness')
+    expect(config.extraMetadata.desktopName).toBe('dsh-desktop-ubuntu')
     expect(config.linux.syncDesktopName).toBe(true)
+    expect(config.artifactName).toBe('dsh-desktop-ubuntu-${version}-${os}-${arch}-unsigned.${ext}')
     expect(config.extraResources).toContainEqual({
       from: new URL('../resources/icon-linux-16.png', import.meta.url).pathname, to: 'tray-linux.png',
     })

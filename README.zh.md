@@ -1,4 +1,4 @@
-# DeepSeek Harness
+# dsh-desktop-ubuntu
 
 [English](README.md) | 中文
 
@@ -8,16 +8,16 @@ DeepSeek Harness（`dsh`）是由 [DeepSeek AI](https://deepseek.com) 开发的�
 
 文档：[https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
-## Ubuntu 社区版
+## Ubuntu Desktop 打包
 
-本社区分支在上游 `master` 基础上增加 Ubuntu 桌面打包，同时保留上游的 agent、插件和 Web UI 能力。
+本仓库基于上游 `master` 为 Ubuntu 构建并分发 DeepSeek Harness Desktop 原生安装包，专注于 Linux Desktop 打包；应用仍保留上游的 agent、插件和 Web UI 能力。
 
 ### Debian 包
 
-在 Ubuntu 24.04 或 22.04 上，从 [Ubuntu 社区版发布页](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases)下载最新的 `deepseek-harness-*-linux-amd64-unsigned.deb`，然后安装：
+在 Ubuntu 24.04 或 22.04 上，从 [Ubuntu 社区版发布页](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases)下载最新的 `dsh-desktop-ubuntu-*-linux-amd64-unsigned.deb`，然后安装：
 
 ```bash
-sudo dpkg -i deepseek-harness-*.deb
+sudo dpkg -i dsh-desktop-ubuntu-*.deb
 sudo apt -f install
 ```
 
@@ -26,8 +26,8 @@ sudo apt -f install
 从 [Ubuntu 社区版发布页](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases)下载最新 x86_64 AppImage，然后运行：
 
 ```bash
-chmod +x deepseek-harness-*-linux-x86_64-unsigned.AppImage
-./deepseek-harness-*-linux-x86_64-unsigned.AppImage
+chmod +x dsh-desktop-ubuntu-*-linux-x86_64-unsigned.AppImage
+./dsh-desktop-ubuntu-*-linux-x86_64-unsigned.AppImage
 ```
 
 ### 从源码构建
@@ -41,7 +41,7 @@ pnpm install
 
 ### 自动发布与限制
 
-GitHub Actions 每天 UTC 20:00 合并上游并构建。推送 `ubuntu-v*` 标签会发布包含 Debian 包、AppImage 和 SHA-256 校验和的 Release。Debian 包通过 apt 通道升级；AppImage 需要下载新版本。由于上游签名与公证流程不支持 Linux，Linux 构建使用 local profile。
+GitHub Actions 每天 UTC 20:00 合并上游并构建。推送 `ubuntu-v*` 标签会发布包含 Ubuntu Desktop Debian 包、AppImage 和 SHA-256 校验和的 Release。Debian 包通过 apt 通道升级；AppImage 需要下载新版本。由于上游签名与公证流程不支持 Linux，Linux 构建使用 local profile。
 
 ## 开发者预览
 

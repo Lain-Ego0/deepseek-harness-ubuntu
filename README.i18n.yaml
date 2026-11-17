@@ -2,48 +2,48 @@
 # section, a hash of its English and Chinese blocks outside code blocks and generated regions.
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write README.md
-/deepseek-harness:
-  en: f68c4f080ce55ff2
-  zh: 88a76d7f7f0b260e
-/deepseek-harness/ubuntu-community-builds:
-  en: 550d30d41d288285
-  zh: 019a6a4821eb01f0
-/deepseek-harness/ubuntu-community-builds/debian-package:
-  en: b75ca557569c0704
-  zh: f69068597acc4979
-/deepseek-harness/ubuntu-community-builds/appimage:
+/dsh-desktop-ubuntu:
+  en: 99916012275cc79c
+  zh: 37a49c127468cfc5
+/dsh-desktop-ubuntu/ubuntu-desktop-packaging:
+  en: eaa2cdc5e1d95bf1
+  zh: a1746b4a66f24c02
+/dsh-desktop-ubuntu/ubuntu-desktop-packaging/debian-package:
+  en: ef42a56f361a68e9
+  zh: 8401fa9e75287047
+/dsh-desktop-ubuntu/ubuntu-desktop-packaging/appimage:
   en: fc7a8276a301090a
   zh: 8c97c659c3e71f9f
-/deepseek-harness/ubuntu-community-builds/build-from-source:
+/dsh-desktop-ubuntu/ubuntu-desktop-packaging/build-from-source:
   en: 7a269118908409d1
   zh: f11b491f0716e9e9
-/deepseek-harness/ubuntu-community-builds/automated-releases-and-limitations:
-  en: dffd6f606aafc96d
-  zh: 4744bf02699e242d
-/deepseek-harness/developer-preview:
+/dsh-desktop-ubuntu/ubuntu-desktop-packaging/automated-releases-and-limitations:
+  en: 4d90c0ae47e29584
+  zh: 570a7a555367ab8b
+/dsh-desktop-ubuntu/developer-preview:
   en: 4ef4d8a71ac143f0
   zh: 1bfc3149ba8e5543
-/deepseek-harness/run:
+/dsh-desktop-ubuntu/run:
   en: 4e0248e4c6474fc6
   zh: eb2fb8d78c7d6bc0
-/deepseek-harness/run/run-from-npm:
+/dsh-desktop-ubuntu/run/run-from-npm:
   en: e22005cd42e6cbad
   zh: 0f536f4208df1d60
-/deepseek-harness/run/run-from-source:
+/dsh-desktop-ubuntu/run/run-from-source:
   en: 819e3f7c144d0d64
   zh: de815f040975dba7
-/deepseek-harness/community-and-support:
+/dsh-desktop-ubuntu/community-and-support:
   en: 20acf6451fdc869b
   zh: d06246dd019ecef7
-/deepseek-harness/contributing:
+/dsh-desktop-ubuntu/contributing:
   en: cabc2d3e9f8898bd
   zh: 83b6d238bae29ce3
-/deepseek-harness/development:
+/dsh-desktop-ubuntu/development:
   en: 803ca2b11b497bed
   zh: 8b4071eb0e7783ef
-/deepseek-harness/citation:
+/dsh-desktop-ubuntu/citation:
   en: 6704e9e5a8d49a91
   zh: 85c9cdd8d56f8e9d
-/deepseek-harness/license:
+/dsh-desktop-ubuntu/license:
   en: 926995344fc1c72b
   zh: c92fab5abf85932f

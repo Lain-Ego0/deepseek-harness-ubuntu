@@ -44,7 +44,7 @@ export function connectDesktopTray(
   const publish = (): void => {
     const state = sessions.getSnapshot()
     if (state.phase !== 'ready') return
-    const conversations = state.ids.flatMap(sessionId => {
+    const conversations = state.ids.flatMap((sessionId) => {
       const row = state.byId[sessionId]
       if (row === undefined || row.blank || row.origin === 'subagent') return []
       return [{ sessionId, title: row.title?.trim() || row.displayTitle }]
@@ -55,7 +55,7 @@ export function connectDesktopTray(
     bridge.updateRecentConversations(conversations)
   }
   const stopList = sessions.subscribe(publish)
-  const stopAction = bridge.onAction(action => {
+  const stopAction = bridge.onAction((action) => {
     switch (action.kind) {
       case 'new':
         workspace.startSession()
@@ -64,7 +64,7 @@ export function connectDesktopTray(
         more()
         break
       case 'open-session':
-        if (/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu.test(action.sessionId)) {
+        if (action.sessionId.trim() !== '') {
           workspace.openSession(brandString<SessionId>(action.sessionId))
         }
         break

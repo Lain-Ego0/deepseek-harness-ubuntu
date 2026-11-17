@@ -113,10 +113,10 @@ export function createElectronBuilderConfig(
       dshDesktopAppId: appId,
       dshDesktopUpdateChannel: update?.channel ?? 'nightly',
       ...(resolvedPlatform === 'linux' ? {
-        description: 'DeepSeek Harness desktop client for Ubuntu — open-source agent harness by DeepSeek AI',
-        desktopName: 'deepseek-harness',
+        description: 'DeepSeek Harness Desktop for Ubuntu — open-source agent harness by DeepSeek AI',
+        desktopName: 'dsh-desktop-ubuntu',
         homepage: 'https://github.com/Lain-Ego0/deepseek-harness-ubuntu',
-        author: 'DeepSeek Harness Linux Community',
+        author: 'dsh-desktop-ubuntu contributors',
       } : {}),
       ...(policy === undefined ? {} : { dshMandatoryUpdatePolicy: policy }),
       ...buildVersion === productVersion ? {} : { version: buildVersion },
@@ -126,7 +126,9 @@ export function createElectronBuilderConfig(
     // The default copyright uses author.name; this line names the product instead.
     copyright: `Copyright © ${new Date().getFullYear()} \${productName}`,
     // Unsigned builds carry their own suffix so a shared file can never pass for a release artifact.
-    artifactName: `deepseek-harness-\${version}-\${os}-\${arch}${output.suffix}.\${ext}`,
+    artifactName: resolvedPlatform === 'linux'
+      ? `dsh-desktop-ubuntu-\${version}-\${os}-\${arch}${output.suffix}.\${ext}`
+      : `deepseek-harness-\${version}-\${os}-\${arch}${output.suffix}.\${ext}`,
     directories: { output: output.directory },
     asar: true,
     electronDist: buildPaths.electron,
@@ -264,14 +266,14 @@ export function createElectronBuilderConfig(
     linux: {
       category: 'Development',
       target: ['AppImage', 'deb'],
-      maintainer: 'DeepSeek Harness Linux Community <dsh-linux@example.invalid>',
-      vendor: 'DeepSeek Harness Linux Community',
+      maintainer: 'dsh-desktop-ubuntu contributors',
+      vendor: 'dsh-desktop-ubuntu',
       icon: fileURLToPath(new URL('../resources/linux-icons', import.meta.url)),
       syncDesktopName: true,
     },
     deb: {
       depends: ['libc6', 'libgtk-3-0', 'libnss3', 'libasound2t64', 'libxss1'],
-      synopsis: 'DeepSeek Harness desktop client for Ubuntu',
+      synopsis: 'DeepSeek Harness Desktop for Ubuntu',
     },
     nsis: {
       uninstallDisplayName: '${productName}',

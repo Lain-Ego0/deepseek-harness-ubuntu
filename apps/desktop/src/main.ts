@@ -916,7 +916,8 @@ async function main(): Promise<void> {
     const conversations: DesktopRecentConversation[] = []
     for (const candidate of value) {
       if (typeof candidate !== 'object' || candidate === null || !('sessionId' in candidate) || !('title' in candidate)
-        || typeof candidate.sessionId !== 'string' || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/iu.test(candidate.sessionId)
+        || typeof candidate.sessionId !== 'string' || candidate.sessionId.trim() === '' || candidate.sessionId.length > 256
+        || /[\u0000-\u001f\u007f]/u.test(candidate.sessionId)
         || typeof candidate.title !== 'string' || candidate.title.trim() === '' || candidate.title.length > 240
         || /[\u0000-\u001f\u007f]/u.test(candidate.title)) return
       conversations.push({ sessionId: candidate.sessionId, title: candidate.title })

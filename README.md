@@ -1,4 +1,4 @@
-# DeepSeek Harness
+# dsh-desktop-ubuntu
 
 English | [中文](README.zh.md)
 
@@ -8,16 +8,16 @@ It is built on an **everything-is-a-plugin** architecture and powered by [Cordis
 
 Documentation: [https://deepseek-harness.github.io/deepseek-harness/](https://deepseek-harness.github.io/deepseek-harness/)
 
-## Ubuntu community builds
+## Ubuntu Desktop packaging
 
-This community fork adds Ubuntu desktop packaging to upstream `master`; it retains the upstream agent, plugin, and Web UI capabilities.
+This repository packages the DeepSeek Harness Desktop application for Ubuntu from the upstream `master` branch. It focuses on producing and distributing native Linux Desktop installers; the application retains upstream agent, plugin, and Web UI capabilities.
 
 ### Debian package
 
-On Ubuntu 24.04 or 22.04, download the latest `deepseek-harness-*-linux-amd64-unsigned.deb` from [Ubuntu community releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases), then install it:
+On Ubuntu 24.04 or 22.04, download the latest `dsh-desktop-ubuntu-*-linux-amd64-unsigned.deb` from [Ubuntu community releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases), then install it:
 
 ```bash
-sudo dpkg -i deepseek-harness-*.deb
+sudo dpkg -i dsh-desktop-ubuntu-*.deb
 sudo apt -f install
 ```
 
@@ -26,8 +26,8 @@ sudo apt -f install
 Download the latest x86_64 AppImage from [Ubuntu community releases](https://github.com/Lain-Ego0/deepseek-harness-ubuntu/releases), then run:
 
 ```bash
-chmod +x deepseek-harness-*-linux-x86_64-unsigned.AppImage
-./deepseek-harness-*-linux-x86_64-unsigned.AppImage
+chmod +x dsh-desktop-ubuntu-*-linux-x86_64-unsigned.AppImage
+./dsh-desktop-ubuntu-*-linux-x86_64-unsigned.AppImage
 ```
 
 ### Build from source
@@ -41,7 +41,7 @@ Artifacts are written to `apps/desktop/.desktop-build/targets/linux-*/unsigned-a
 
 ### Automated releases and limitations
 
-GitHub Actions merges upstream and builds daily at 20:00 UTC. Pushing a `ubuntu-v*` tag publishes a release with Debian and AppImage packages and SHA-256 checksums. Debian packages use the apt upgrade path; AppImage updates require downloading a newer release. Linux builds use the local profile because the upstream signing and notarization path does not support Linux.
+GitHub Actions merges upstream and builds daily at 20:00 UTC. Pushing a `ubuntu-v*` tag publishes a release with Ubuntu Desktop Debian and AppImage packages and SHA-256 checksums. Debian packages use the apt upgrade path; AppImage updates require downloading a newer release. Linux builds use the local profile because the upstream signing and notarization path does not support Linux.
 
 ## Developer preview
 

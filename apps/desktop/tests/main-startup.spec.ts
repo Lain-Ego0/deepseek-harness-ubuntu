@@ -75,7 +75,9 @@ const harness = await vi.hoisted(async () => {
   const updateDownload = vi.fn(async (_version: string, _revision?: number): Promise<DesktopUpdateState> => updateState)
   const updateInstall = vi.fn(async (_version: string, _revision?: number): Promise<DesktopUpdateState> => updateState)
   const popup = vi.fn<(options: { window: FakeWindow; x?: number; y?: number; callback?: () => void }) => void>()
-  const menuBuilder = vi.fn<(template: MenuItemConstructorOptions[]) => { popup: typeof popup; template: MenuItemConstructorOptions[] }>(template => ({ popup, template }))
+  const menuBuilder = vi.fn<
+    (template: MenuItemConstructorOptions[]) => { popup: typeof popup; template: MenuItemConstructorOptions[] }
+  >(template => ({ popup, template }))
   const menu = Object.assign(menuBuilder, { buildFromTemplate: menuBuilder, setApplicationMenu: vi.fn() })
   class FakeWindow extends EventEmitter {
     destroyed = false
@@ -849,7 +851,8 @@ describe('desktop main startup', () => {
       { sender, senderFrame: sender.mainFrame }, nextLocale,
     )
     const refreshed = platform === 'win32' ? applicationMenuItems()
-      : (harness.menu.setApplicationMenu.mock.lastCall![0] as { template: MenuItemConstructorOptions[] }).template[0]!.submenu as MenuItemConstructorOptions[]
+      : (harness.menu.setApplicationMenu.mock.lastCall![0] as { template: MenuItemConstructorOptions[] })
+        .template[0]!.submenu as MenuItemConstructorOptions[]
     expect(refreshed.filter(item => item.role === 'toggleDevTools' && item.visible !== false)).toEqual([
       { role: 'toggleDevTools', label: nextLocale === 'en' ? en.toggleDevToolsMenu : zh.toggleDevToolsMenu },
     ])
@@ -1708,7 +1711,7 @@ describe('desktop main startup', () => {
     expect(harness.trays[0]!.image).toEqual({ path: join('desktop-test-resources', 'tray-linux.png') })
     const publish = harness.ipcOn.mock.calls.find(([channel]) => channel === DESKTOP_IPC.trayRecentConversations)![1]
     publish({ sender: window.webContents, senderFrame: window.webContents.mainFrame }, [
-      { sessionId: '123e4567-e89b-42d3-a456-426614174000', title: 'Recent chat' },
+      { sessionId: 'session:imported/42', title: 'Recent chat' },
     ])
     const menu = harness.trays[0]!.setContextMenu.mock.lastCall![0] as { template: MenuItemConstructorOptions[] }
     expect(menu.template.map(item => item.label ?? item.type)).toEqual([

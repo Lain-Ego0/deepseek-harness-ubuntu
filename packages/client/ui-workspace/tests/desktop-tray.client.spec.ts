@@ -8,9 +8,9 @@ function sessionId(value: string): SessionId { return value as SessionId }
 
 function setup() {
   const rows = createSnapshotStore({
-    ids: [sessionId('123e4567-e89b-42d3-a456-426614174000'), sessionId('223e4567-e89b-42d3-a456-426614174000')],
+    ids: [sessionId('cold-skills'), sessionId('223e4567-e89b-42d3-a456-426614174000')],
     byId: {
-      '123e4567-e89b-42d3-a456-426614174000': { id: sessionId('123e4567-e89b-42d3-a456-426614174000'), title: 'Recent title', displayTitle: 'Recent title', blank: false, origin: undefined },
+      'cold-skills': { id: sessionId('cold-skills'), title: 'Recent title', displayTitle: 'Recent title', blank: false, origin: undefined },
       '223e4567-e89b-42d3-a456-426614174000': { id: sessionId('223e4567-e89b-42d3-a456-426614174000'), title: undefined, displayTitle: 'Unnamed', blank: true, origin: undefined },
     },
     phase: 'ready', projectionsBySession: {},
@@ -19,7 +19,7 @@ function setup() {
   let actionListener: ((action: DesktopTrayAction) => void) | undefined
   const bridge: DesktopTrayBridge = {
     updateRecentConversations: vi.fn(),
-    onAction: listener => { actionListener = listener; return () => { actionListener = undefined } },
+    onAction: (listener) => { actionListener = listener; return () => { actionListener = undefined } },
   }
   const workspace = { openSession: vi.fn(), startSession: vi.fn() }
   const more = vi.fn()
@@ -32,20 +32,42 @@ afterEach(() => { vi.restoreAllMocks() })
 it('publishes recent nonblank conversations and routes tray actions through Workspace navigation', () => {
   const f = setup()
   expect(f.bridge.updateRecentConversations).toHaveBeenCalledExactlyOnceWith([
-    { sessionId: '123e4567-e89b-42d3-a456-426614174000', title: 'Recent title' },
+    { sessionId: 'cold-skills', title: 'Recent title' },
   ])
-  f.dispatch({ kind: 'open-session', sessionId: '123e4567-e89b-42d3-a456-426614174000' })
+  f.dispatch({ kind: 'open-session', sessionId: 'cold-skills' })
   f.dispatch({ kind: 'new' })
   f.dispatch({ kind: 'more' })
-  expect(f.workspace.openSession).toHaveBeenCalledExactlyOnceWith(sessionId('123e4567-e89b-42d3-a456-426614174000'))
+  expect(f.workspace.openSession).toHaveBeenCalledExactlyOnceWith(sessionId('cold-skills'))
   expect(f.workspace.startSession).toHaveBeenCalledOnce()
   expect(f.more).toHaveBeenCalledOnce()
   f.dispose()
 })
 
-it('does not open an unvalidated Session id from a native menu action', () => {
+it('opens a Session with an opaque non-UUID id from the native menu', () => {
   const f = setup()
-  f.dispatch({ kind: 'open-session', sessionId: 'not-an-id' })
-  expect(f.workspace.openSession).not.toHaveBeenCalled()
+  f.dispatch({ kind: 'open-session', sessionId: 'session:imported/42' })
+  expect(f.workspace.openSession).toHaveBeenCalledExactlyOnceWith(sessionId('session:imported/42'))
+  f.dispose()
+})
+
+it('publishes a revised session title to the native tray menu', () => {
+  const f = setup()
+  const current = f.rows.getSnapshot() as {
+    readonly byId: Record<string, { readonly title?: string; readonly displayTitle: string }>
+  }
+  f.rows.set({
+    ...current,
+    byId: {
+      ...current.byId,
+      'cold-skills': {
+        ...current.byId['cold-skills'],
+        title: 'Updated title',
+        displayTitle: 'Updated title',
+      },
+    },
+  } as never)
+  expect(f.bridge.updateRecentConversations).toHaveBeenLastCalledWith([
+    { sessionId: 'cold-skills', title: 'Updated title' },
+  ])
   f.dispose()
 })
